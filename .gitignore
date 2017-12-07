@@ -14,7 +14,7 @@ lib-cov
 coverage
 
 # Local files
-local/*
+keys.json
 
 # Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
 .grunt
