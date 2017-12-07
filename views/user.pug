@@ -1,4 +1,12 @@
 extends layout
 
 block content
-  h1 The user is #{title}
+  if error
+    h1 Error! #{error}
+  else
+    h1 The user is #{title}
+    h2 Tweetrate:
+    p Hourly: #{tweetRate.hourly}
+    p Daily: #{tweetRate.daily}
+    p Weekly: #{tweetRate.weekly}
+    p Monthly: #{tweetRate.monthly}

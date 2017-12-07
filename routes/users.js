@@ -1,24 +1,35 @@
-var express = require('express');
-var router = express.Router();
-var request = require('request');
-var querystring = require('querystring');
-var path = require('path');
-var fs = require('fs')
+const express = require('express');
+const router = express.Router();
+const request = require('request');
+const querystring = require('querystring');
+const path = require('path');
+const fs = require('fs')
+const util = require('util');
+var app = express();
 
 let base64_key;
 
 let userFileLocation;
+const accessTimeLocation = path.join(__dirname, '../data/~accesstime.json')
+let tweetRate = {
+  hourly: -1,
+  daily: -1,
+  weekly: -1,
+  monthly: -1
+}
 
 let username;
 let bearer_token;
 let tweets;
-let lastAccessDate;
+
+let response;
 
 /* GET users listing. */
 router.get('/:username', function(req, res, next) {
+  response = res;
   username = req.params.username;
   getKeys();
-  res.render('user', { title: username });
+  // response.render('user', { title: username, tweetRate: tweetRate });
 });
 
 function getKeys() {
@@ -62,7 +73,6 @@ function twitterAuth(key) {
       console.error(error);
       console.log('body: ' + body);
     } else {
-      console.log(response.statusCode, body);
       bearer_token = JSON.parse(body).access_token;
       getTweets();
     }
@@ -70,44 +80,46 @@ function twitterAuth(key) {
 }
 
 function getTweets() {
+  let date = new Date()
+  let dateMs = date.getTime()
   userFileLocation = path.join(__dirname, `../data/${username}.json`);
   const options = {
-    url: 'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=' + username + '&count=10',
+    url: 'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=' + username + '&count=100',
     method: 'GET',
     headers: {
       'Authorization': 'Bearer ' + bearer_token
     }
   }
 
-  let d = new Date()
+  fs.stat(userFileLocation, (err, data) => {
+    if (err == null) {
+      // file exists
 
-  requestTweets(options)
-  // if (d.value > (lastAccessDate + 900000)) {
-  //   lastAccessDate = d.value
+      let accessDifference = dateMs - util.inspect(data.mtimeMs)
 
-  // } else {
-  //   console.log('cache tweets somehow and pull them from here!!!!')
-  //   console.log(userFileLocation)
-  //   fs.stat(userFileLocation, (err, data) => {
-  //     if (err == null) {
-  //       // file exists
-  //       fs.readFile(userFileLocation, 'utf8', (err, data) => {
-  //         if (err) {
-  //           console.error(err)
-  //         } else {
-  //           tweets = JSON.parse(data)
-  //           requestTweets(options)
-  //         }
-  //       })
-  //     } else if (err.code = 'ENOENT') {
-  //       // file doesn't exist
-  //     } else {
-  //       console.error(err);
-  //     }
-  //   })
-  // }
+      if (accessDifference > 900000) {
+        console.log(`fetching new tweets! ${ accessDifference } since last fetch`)
 
-  console.log(tweets);
+        requestTweets(options)
+      } else {
+        console.log(`fetching old tweets! ${ accessDifference } since last fetch`)
+        fs.readFile(userFileLocation, 'utf8', (err, data) => {
+          if (err) {
+            console.error('error: ' + err)
+          } else {
+            tweets = JSON.parse(data)
+            calculateTweetsPerDay()
+          }
+        })
+      }
+    } else if (err.code = 'ENOENT') {
+      // file doesn't exist
+      console.error(`file doesn't exist`)
+      requestTweets(options)
+    } else {
+      console.error('error: ' + err)
+    }
+  })
 }
 
 function requestTweets(options) {
@@ -115,12 +127,11 @@ function requestTweets(options) {
     if (error) {
       console.error('error: ' + error)
     } else {
-      tweets = JSON.parse(body)
-      console.log("tweets: " + tweets);
-      fs.writeFile(userFileLocation, tweets, 'utf8', (err) => {
+      fs.writeFile(userFileLocation, body, 'utf8', (err) => {
         if (err) throw err
       })
 
+      tweets = JSON.parse(body)
       calculateTweetsPerDay()
     }
   })
@@ -128,9 +139,27 @@ function requestTweets(options) {
 }
 
 function calculateTweetsPerDay() {
-  console.log("number of tweets:" + tweets.length)
-  console.log("first tweet date: " + tweets[0].created_at)
-  console.log("last tweet date: " + tweets[tweets.length - 1].created_at)
+  let error;
+  if (tweets != undefined) {
+    let tweetsAmount = tweets.length
+    console.log("number of tweets:" + tweetsAmount)
+    let newestDate = Date.parse(tweets[0].created_at)
+    let oldestDate = Date.parse(tweets[tweets.length - 1].created_at)
+    console.log("first tweet date: " + newestDate)
+    console.log("last tweet date: " + oldestDate)
+    let secondsDifference = (newestDate - oldestDate) / 1000;
+    let minutesDifference = (secondsDifference / 60)
+    let hoursDifference = (minutesDifference / 60)
+    console.log('hour difference: ' + Math.round(hoursDifference))
+    tweetRate.hourly = tweetsAmount / hoursDifference;
+    tweetRate.daily = tweetRate.hourly * 24;
+    tweetRate.weekly = tweetRate.daily * 7;
+    tweetRate.monthly = tweetRate.weekly * 4;
+  } else {
+    error = 'Hrm! There seems to be a problem, try again later or with a different username';
+  }
+
+  response.render('user', { error: error, title: username, tweetRate: tweetRate });
 }
 
 module.exports = router;
