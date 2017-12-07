@@ -17,6 +17,7 @@ let tweetRate = {
   weekly: -1,
   monthly: -1
 }
+const apiCount = 100;
 
 let username;
 let bearer_token;
@@ -84,7 +85,7 @@ function getTweets() {
   let dateMs = date.getTime()
   userFileLocation = path.join(__dirname, `../data/${username}.json`);
   const options = {
-    url: 'https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=' + username + '&count=100',
+    url: `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${username}&count=${apiCount}`,
     method: 'GET',
     headers: {
       'Authorization': 'Bearer ' + bearer_token
@@ -140,26 +141,33 @@ function requestTweets(options) {
 
 function calculateTweetsPerDay() {
   let error;
+  let startDate
+  let endDate
   if (tweets != undefined) {
     let tweetsAmount = tweets.length
     console.log("number of tweets:" + tweetsAmount)
-    let newestDate = Date.parse(tweets[0].created_at)
-    let oldestDate = Date.parse(tweets[tweets.length - 1].created_at)
-    console.log("first tweet date: " + newestDate)
-    console.log("last tweet date: " + oldestDate)
-    let secondsDifference = (newestDate - oldestDate) / 1000;
+    startDate = Date.parse(tweets[0].created_at)
+    endDate = Date.parse(tweets[tweets.length - 1].created_at)
+    let secondsDifference = (startDate - endDate) / 1000;
     let minutesDifference = (secondsDifference / 60)
     let hoursDifference = (minutesDifference / 60)
     console.log('hour difference: ' + Math.round(hoursDifference))
-    tweetRate.hourly = tweetsAmount / hoursDifference;
-    tweetRate.daily = tweetRate.hourly * 24;
-    tweetRate.weekly = tweetRate.daily * 7;
-    tweetRate.monthly = tweetRate.weekly * 4;
+    let hourly = (tweetsAmount / hoursDifference);
+    tweetRate.hourly = hourly.toFixed(2);
+    tweetRate.daily = (hourly * 24).toFixed(2);
+    tweetRate.weekly = (hourly * 24 * 7).toFixed(2);
+    tweetRate.monthly = (hourly * 24 * 7 * 4).toFixed(2);
   } else {
     error = 'Hrm! There seems to be a problem, try again later or with a different username';
   }
 
-  response.render('user', { error: error, title: username, tweetRate: tweetRate });
+  let _startDate = new Date(startDate);
+  let _endDate = new Date(endDate);
+
+  let startDateFormatted = `${_startDate.getFullYear()}/${_startDate.getMonth() + 1}/${_startDate.getDate()}`
+  let endDateFormatted = `${_endDate.getFullYear()}/${_endDate.getMonth() + 1}/${_endDate.getDate()}`
+
+  response.render('user', { error: error, title: username, tweetRate: tweetRate, startDate: startDateFormatted, endDate: endDateFormatted, apiCount: apiCount });
 }
 
 module.exports = router;

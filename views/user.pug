@@ -4,9 +4,10 @@ block content
   if error
     h1 Error! #{error}
   else
-    h1 The user is #{title}
-    h2 Tweetrate:
-    p Hourly: #{tweetRate.hourly}
-    p Daily: #{tweetRate.daily}
-    p Weekly: #{tweetRate.weekly}
-    p Monthly: #{tweetRate.monthly}
+    h1 Here's the tweetrate for #[a(href='https://twitter.com/' + title) #{title} on twitter]!
+    p #{tweetRate.hourly} per hour
+    p #{tweetRate.daily} per day
+    p #{tweetRate.weekly} per week
+    p #{tweetRate.monthly} per month
+
+    p information pulled from last #{ apiCount } tweets, from #{ startDate } to #{ endDate }
