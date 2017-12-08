@@ -85,7 +85,7 @@ function getTweets() {
   let dateMs = date.getTime()
   userFileLocation = path.join(__dirname, `../data/${username}.json`);
   const options = {
-    url: `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${username}&count=${apiCount}`,
+    url: `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${username}&count=${apiCount}&exclude_replies=true`,
     method: 'GET',
     headers: {
       'Authorization': 'Bearer ' + bearer_token

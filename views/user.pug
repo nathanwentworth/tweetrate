@@ -1,4 +1,5 @@
 extends layout
+include input-partial
 
 block content
   if error
@@ -11,3 +12,6 @@ block content
     p #{tweetRate.monthly} per month
 
     p information pulled from last #{ apiCount } tweets, from #{ startDate } to #{ endDate }
+    p includes retweets, but not replies
+
+    +input-partial
