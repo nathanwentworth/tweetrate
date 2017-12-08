@@ -80,12 +80,23 @@ function twitterAuth(key) {
   });
 }
 
+// function filterNonSelfReplies() {
+//   // TODO: fix this what the heck
+//   let filteredTweets = tweets.filter((tw) => {
+//     console.log(tw.in_reply_to_screen_name == null || tw.in_reply_to_screen_name == username)
+//     tw.in_reply_to_screen_name == null || tw.in_reply_to_screen_name == username
+//   })
+
+//   console.log(filteredTweets)
+//   return filteredTweets
+// }
+
 function getTweets() {
   let date = new Date()
   let dateMs = date.getTime()
   userFileLocation = path.join(__dirname, `../data/${username}.json`);
   const options = {
-    url: `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${username}&count=${apiCount}&exclude_replies=true`,
+    url: `https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=${username}&count=${apiCount}`,
     method: 'GET',
     headers: {
       'Authorization': 'Bearer ' + bearer_token
@@ -151,10 +162,12 @@ function calculateTweetsPerDay() {
   let startDate
   let endDate
   if (tweets != undefined) {
-    let tweetsAmount = tweets.length
+    // _tweets = filterNonSelfReplies()
+    _tweets = tweets
+    let tweetsAmount = _tweets.length
     console.log("number of tweets:" + tweetsAmount)
-    startDate = Date.parse(tweets[0].created_at)
-    endDate = Date.parse(tweets[tweets.length - 1].created_at)
+    startDate = Date.parse(_tweets[0].created_at)
+    endDate = Date.parse(_tweets[_tweets.length - 1].created_at)
     let secondsDifference = (startDate - endDate) / 1000;
     let minutesDifference = (secondsDifference / 60)
     let hoursDifference = (minutesDifference / 60)
