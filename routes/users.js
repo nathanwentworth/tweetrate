@@ -124,16 +124,23 @@ function getTweets() {
 }
 
 function requestTweets(options) {
-  request(options, function(error, response, body) {
+  request(options, function(error, _request, body) {
     if (error) {
       console.error('error: ' + error)
     } else {
-      fs.writeFile(userFileLocation, body, 'utf8', (err) => {
-        if (err) throw err
-      })
-
       tweets = JSON.parse(body)
-      calculateTweetsPerDay()
+
+      if (tweets.error) {
+        response.render('user', { error: tweets.error, title: username, tweetRate: tweetRate, apiCount: apiCount });
+
+        return;
+      } else {
+        fs.writeFile(userFileLocation, body, 'utf8', (err) => {
+          if (err) throw err
+        })
+        calculateTweetsPerDay()
+      }
+
     }
   })
 
