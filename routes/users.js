@@ -34,28 +34,9 @@ router.get('/:username', function(req, res, next) {
 });
 
 function getKeys() {
-
-  fileLocation = path.join(__dirname, '../local/keys.json');
-  fs.stat(fileLocation, (err, data) => {
-    if (err == null) {
-      // file exists
-      fs.readFile(fileLocation, 'utf8', (err, data) => {
-        if (err) {
-          console.error(err)
-        } else {
-          keys = JSON.parse(data)
-          let combined_key = encodeURIComponent(keys.consumer_key) + ':' + encodeURIComponent(keys.consumer_secret);
-          base64_key = (new Buffer(combined_key).toString('base64'));
-          twitterAuth(base64_key);
-        }
-      })
-    } else if (err.code = 'ENOENT') {
-      // file doesn't exist
-      console.error(err);
-    } else {
-      console.error(err);
-    }
-  })
+  let combined_key = encodeURIComponent(process.env.consumer_key) + ':' + encodeURIComponent(process.env.consumer_secret);
+  base64_key = (new Buffer(combined_key).toString('base64'));
+  twitterAuth(base64_key);
 }
 
 function twitterAuth(key) {
